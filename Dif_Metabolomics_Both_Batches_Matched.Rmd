@@ -1,0 +1,448 @@
+---
+title: "Dif_Metabolomics_Both_Batches_Matched"
+author: "Jordan Baechle, MD"
+date: "2024-12-01"
+output: html_document
+  url: https://github.com/
+  affiliation: Buck Institute for Research on Aging
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_notebook: default
+  pdf_document: default
+  theme: spacelab
+---
+
+```{r}
+library(gage)
+library(DESeq2)
+library(scales)
+library(AnnotationDbi)
+library(org.Hs.eg.db)
+library(janitor)
+library(clusterProfiler)
+library(DOSE)
+library(dplyr)
+library(gapminder)
+library(tidyverse)
+library(ggsci)
+library(ggthemes)
+library(readxl)
+library(writexl)
+library(EnhancedVolcano)
+library(ggpubr)
+# figures <- "/opt/home/buckcenter.org/jbaechle/promise_project/figures"
+```
+
+
+```{r}
+countData <- read_excel("/bigrock/FurmanLab/DataRepository/promise/metabolomics/promise_metabolon_trans.xlsx")
+countData <- countData[!startsWith(countData$metabolite, "X-"),]
+
+df <- data.frame(countData)
+cols <- sapply(df, is.numeric)
+df[cols] <- 1000*df[cols]
+df <- cbind(df[,1], sapply(df[,-1], as.integer))
+colnames(df)[1] <- "metabolite"
+df <- as.data.frame(df)
+head(df)
+
+pre0_countData <- df |>
+select("metabolite", 
+       "X1006.0.Y3", "X1075.0.Y3", "X1131.0.Y3", "X1129.0.Y3",
+       "X1177.0.Y3", "X2186.0.Y3", "X1266.0.Y6", "X2285.0.Y6", 
+       "X2042.0.Y6", "X1249.0.Y6", "X2265.0.Y6", "X1150.0.Y6", # Batch 1
+       
+       "X1509.0.Y6", "X2166.0.Y6", "X1557.0.Y6", "X2073.0.Y6", # Batch 2
+       "X2288.0.Y6", "X2210.0.Y6", "X2144.0.Y6", "X1452.0.Y6",
+       "X1484.0.Y6", "X1439.0.Y6")
+
+metaData0 <- data.frame (
+      id  = 
+      c("X1006.0.Y3", "X1075.0.Y3", "X1131.0.Y3", "X1129.0.Y3",
+        "X1177.0.Y3", "X2186.0.Y3", "X1266.0.Y6", "X2285.0.Y6", 
+        "X2042.0.Y6", "X1249.0.Y6", "X2265.0.Y6", "X1150.0.Y6", # Batch 1
+       
+       "X1509.0.Y6", "X2166.0.Y6", "X1557.0.Y6", "X2073.0.Y6",  # Batch 2
+       "X2288.0.Y6", "X2210.0.Y6", "X2144.0.Y6", "X1452.0.Y6",
+       "X1484.0.Y6", "X1439.0.Y6"),
+      
+      Site = 
+      c("Convert", "Control", "Convert", "Control",
+        "Convert", "Control", "Convert", "Control",
+        "Convert", "Control", "Convert", "Control",
+        
+        "Control", "Convert", "Control", "Convert",
+        "Control", "Convert", "Control", "Convert",
+        "Control", "Convert"))
+
+df0 <- cbind(as.data.frame(pre0_countData[,1]), sapply(pre0_countData[,-1], as.numeric))
+colnames(df0)[1] <- "metabolite"
+pre0_countData <- as.data.frame(df0)
+pre0_countData   <- pre0_countData  |> na.omit()
+
+countData <- as.data.frame(pre0_countData)
+metaData <- as.data.frame(metaData0)
+dds <- DESeqDataSetFromMatrix(countData=countData, colData=metaData, design=~Site, tidy = TRUE)
+dds <- DESeq(dds)
+res <- results(dds, contrast=c("Site","Convert", "Control"))
+
+ keyvals.colour <- ifelse(
+    res$log2FoldChange < -0 & res$pvalue < 0.05, "#3C5488B2",
+      ifelse(res$log2FoldChange > 0 & res$pvalue < 0.05, "#DC0000B2", 'black'))
+  keyvals.colour[is.na(keyvals.colour)] <- 'black'
+  names(keyvals.colour)[keyvals.colour == "#DC0000B2"] <- 'high'
+  names(keyvals.colour)[keyvals.colour == 'black'] <- 'ns'
+  names(keyvals.colour)[keyvals.colour == "#3C5488B2"] <- 'low'
+
+
+Pre0_M <- EnhancedVolcano(res,
+                      title = NULL,
+                      subtitle = NULL,
+                      lab = rownames(res),
+                      x = 'log2FoldChange',
+                      y = 'pvalue',
+                      xlab = bquote(~Log[2]~ 'fold change (IAU)'),
+                      pCutoff = 0.05,
+                      FCcutoff = 0,
+                      labSize = 0,
+                      boxedLabels = FALSE,
+                      legendPosition = 'none',
+                      legendLabSize = 11,
+                      legendIconSize = 4.0,
+                      drawConnectors = FALSE,
+                      arrowheads = FALSE,
+                      colCustom = keyvals.colour,
+                      colAlpha = c(ifelse(abs(res$pvalue) < 0.05, 0.5, 0.2)),
+                      pointSize = c(ifelse(abs(res$pvalue) < 0.05, 2, 1.5)),
+                      shape = 15,
+                      # max.overlaps = Inf,
+                      # maxoverlapsConnectors = Inf,
+                      caption=NULL,
+                      widthConnectors = 0.0, xlim = c(-6, 6),ylim = c(0, -log10(10e-11)))
+Pre0_M <- Pre0_M + theme_pubr() + scale_y_continuous(limits=c(0,-log10(10e-11)), breaks=seq(0,10,2)) +
+  annotate("rect", xmin = -6, xmax = -0.1, ymin = -log10(0.04), ymax = -log10(10e-11), alpha = .05) +
+  annotate("rect", xmin = 0.1, xmax = 6, ymin = -log10(0.04), ymax = -log10(10e-11), alpha = .05) +
+ geom_point(size = c(ifelse(abs(res$pvalue) < 0.05, 2, 1.5)), alpha = .9, na.rm = T, shape = 22, colour = "black")
+Pre0_M
+
+
+
+
+res <- as.data.frame(res)
+res$metabolite <- rownames(res)
+res <- res %>% select(metabolite, everything())
+write_csv(res, 
+          file = "/bigrock/FurmanLab/DataRepository/promise/Misc/Pre0_DEM_matched.csv")
+```
+
+```{r}
+countData <- read_excel("/bigrock/FurmanLab/DataRepository/promise/metabolomics/promise_metabolon_trans.xlsx")
+countData <- countData[!startsWith(countData$metabolite, "X-"),]
+
+df <- data.frame(countData)
+cols <- sapply(df, is.numeric)
+df[cols] <- 1000*df[cols]
+head(df)
+df <- cbind(df[,1], sapply(df[,-1], as.integer))
+colnames(df)[1] <- "metabolite"
+df <- as.data.frame(df)
+head(df)
+
+pre3_countData <- df |>
+select("metabolite", 
+       "X1131.0.Y0", "X1129.0.Y0", "X1177.0.Y0", "X2186.0.Y0",
+       "X1266.0.Y3", "X2285.0.Y3", "X1300.0.Y6", "X2070.0.Y6", 
+       "X1397.0.Y6", "X2261.0.Y6", "X2042.0.Y3", "X1249.0.Y3", 
+       "X2099.0.Y6", "X2089.0.Y6", "X2127.0.Y6", "X2280.0.Y6", # Batch 1
+       "X1152.0.Y6", "X2220.0.Y6", 
+              
+       "X1509.0.Y3", "X2166.0.Y3", "X1557.0.Y3", "X2073.0.Y3", # Batch 2
+       "X1380.0.Y6", "X2307.0.Y6", "X1094.0.Y6", "X2294.0.Y6",
+       "X2288.0.Y3", "X2210.0.Y3", "X2260.0.Y6", "X2048.0.Y6",
+       "X2144.0.Y3", "X1452.0.Y3", "X1484.0.Y3", "X1439.0.Y3",
+       "X2303.0.Y6", "X1212.0.Y6")
+
+metaData3 <- data.frame (
+      id  = 
+      c("X1131.0.Y0", "X1129.0.Y0", "X1177.0.Y0", "X2186.0.Y0",
+        "X1266.0.Y3", "X2285.0.Y3", "X1300.0.Y6", "X2070.0.Y6", 
+        "X1397.0.Y6", "X2261.0.Y6", "X2042.0.Y3", "X1249.0.Y3", 
+        "X2099.0.Y6", "X2089.0.Y6", "X2127.0.Y6", "X2280.0.Y6", # Batch 1
+        "X2220.0.Y6", "X1152.0.Y6",
+              
+        "X1509.0.Y3", "X2166.0.Y3", "X1557.0.Y3", "X2073.0.Y3", # Batch 2
+        "X1380.0.Y6", "X2307.0.Y6", "X1094.0.Y6", "X2294.0.Y6",
+        "X2288.0.Y3", "X2210.0.Y3", "X2260.0.Y6", "X2048.0.Y6",
+        "X2144.0.Y3", "X1452.0.Y3", "X1484.0.Y3", "X1439.0.Y3",
+        "X2303.0.Y6", "X1212.0.Y6"),
+      
+      Site = 
+      c("Convert", "Control", "Convert", "Control",
+        "Convert", "Control", "Convert", "Control", 
+        "Convert", "Control", "Convert", "Control",
+        "Convert", "Control", "Convert", "Control",
+        "Convert", "Control",
+        
+        "Control", "Convert", "Control", "Convert",
+        "Control", "Convert", "Control", "Convert",
+        "Control", "Convert", "Control", "Convert",
+        "Control", "Convert", "Control", "Convert",
+        "Control", "Convert"))
+
+df3 <- cbind(as.data.frame(pre3_countData[,1]), sapply(pre3_countData[,-1], as.numeric))
+colnames(df3)[1] <- "metabolite"
+pre3_countData <- as.data.frame(df3)
+pre3_countData   <- pre3_countData  |> na.omit()
+
+countData <- as.data.frame(pre3_countData)
+metaData <- as.data.frame(metaData3)
+dds <- DESeqDataSetFromMatrix(countData=countData, colData=metaData, design=~Site, tidy = TRUE)
+dds <- DESeq(dds)
+res <- results(dds, contrast=c("Site","Convert", "Control"))
+
+ keyvals.colour <- ifelse(
+    res$log2FoldChange < -0 & res$pvalue < 0.05, "#3C5488B2",
+      ifelse(res$log2FoldChange > 0 & res$pvalue < 0.05, "#DC0000B2",
+        'black'))
+  keyvals.colour[is.na(keyvals.colour)] <- 'black'
+  names(keyvals.colour)[keyvals.colour == "#DC0000B2"] <- 'high'
+  names(keyvals.colour)[keyvals.colour == 'black'] <- 'ns'
+  names(keyvals.colour)[keyvals.colour == "#3C5488B2"] <- 'low'
+
+
+Pre3_M <- EnhancedVolcano(res,
+                      title = NULL,
+                      subtitle = NULL,
+                      lab = rownames(res),
+                      x = 'log2FoldChange',
+                      y = 'pvalue',
+                      xlab = bquote(~Log[2]~ 'fold change (NPX)'),
+                      pCutoff = 0.05,
+                      FCcutoff = 0,
+                      labSize = 0,
+                      boxedLabels = FALSE,
+                      legendPosition = 'none',
+                      legendLabSize = 11,
+                      legendIconSize = 4.0,
+                      drawConnectors = FALSE,
+                      arrowheads = FALSE,
+                      colCustom = keyvals.colour,
+                      colAlpha = c(ifelse(abs(res$pvalue) < 0.05, 0.5, 0.2)),
+                      pointSize = c(ifelse(abs(res$pvalue) < 0.05, 2, 1.5)),
+                      shape = 15,
+                      caption = NULL,
+                      # max.overlaps = Inf,
+                      # maxoverlapsConnectors = Inf,
+                      widthConnectors = 0.0, xlim = c(-6, 6),ylim = c(0, -log10(10e-11)))
+Pre3_M <- Pre3_M + theme_pubr() + scale_y_continuous(limits=c(0,-log10(10e-11)), breaks=seq(0,10,2)) +
+  annotate("rect", xmin = -6, xmax = -0.1, ymin = -log10(0.04), ymax = -log10(10e-11), alpha = .05) +
+  annotate("rect", xmin = 0.1, xmax = 6, ymin = -log10(0.04), ymax = -log10(10e-11), alpha = .05) +
+ geom_point(size = c(ifelse(abs(res$pvalue) < 0.05, 2, 1.5)), alpha = .9, na.rm = T, shape = 22, colour = "black")
+
+Pre3_M
+```
+
+```{r}
+countData <- read_excel("/bigrock/FurmanLab/DataRepository/promise/metabolomics/promise_metabolon_trans.xlsx")
+countData <- countData[!startsWith(countData$metabolite, "X-"),]
+
+df <- data.frame(countData)
+cols <- sapply(df, is.numeric)
+df[cols] <- 1000*df[cols]
+head(df)
+df <- cbind(df[,1], sapply(df[,-1], as.integer))
+colnames(df)[1] <- "metabolite"
+df <- as.data.frame(df)
+head(df)
+
+pre6_countData <- df |>
+select("metabolite", 
+       "X1152.0.Y6", "X2220.0.Y3", "X1266.0.Y0", "X2285.0.Y0", 
+       "X1300.0.Y6", "X2070.0.Y3", "X1397.0.Y3", "X2261.0.Y3", 
+       "X2042.0.Y0", "X1249.0.Y0", "X2099.0.Y3", "X2089.0.Y3",
+       "X2127.0.Y3", "X2280.0.Y3", "X2265.0.Y0", "X1150.0.Y0", # Batch 1
+       "X2321.0.Y3", "X2249.0.Y3", 
+       
+       "X1509.0.Y0", "X2166.0.Y0", "X1557.0.Y0", "X2073.0.Y0", # Batch 2
+       "X1380.0.Y3", "X2307.0.Y3", "X1094.0.Y3", "X2294.0.Y3", 
+       "X2288.0.Y0", "X2210.0.Y0", "X2260.0.Y3", "X2048.0.Y3", 
+       "X2144.0.Y0", "X1452.0.Y0", "X1484.0.Y0", "X1439.0.Y0", 
+       "X2303.0.Y3", "X1212.0.Y3")
+
+metaData6 <- data.frame(
+        id  = 
+      c("X1152.0.Y6", "X2220.0.Y3", "X1266.0.Y0", "X2285.0.Y0", 
+        "X1300.0.Y6", "X2070.0.Y3", "X1397.0.Y3", "X2261.0.Y3", 
+        "X2042.0.Y0", "X1249.0.Y0", "X2099.0.Y3", "X2089.0.Y3",
+        "X2127.0.Y3", "X2280.0.Y3", "X2265.0.Y0", "X1150.0.Y0", # Batch 1
+        "X2321.0.Y3", "X2249.0.Y3", 
+       
+        "X1509.0.Y0", "X2166.0.Y0", "X1557.0.Y0", "X2073.0.Y0", # Batch 2
+        "X1380.0.Y3", "X2307.0.Y3", "X1094.0.Y3", "X2294.0.Y3", 
+        "X2288.0.Y0", "X2210.0.Y0", "X2260.0.Y3", "X2048.0.Y3", 
+        "X2144.0.Y0", "X1452.0.Y0", "X1484.0.Y0", "X1439.0.Y0", 
+        "X2303.0.Y3", "X1212.0.Y3"),
+      
+        Site = 
+      c("Convert", "Control", "Convert", "Control",
+        "Convert", "Control", "Convert", "Control", 
+        "Convert", "Control", "Convert", "Control", 
+        "Convert", "Control", "Convert", "Control",
+        "Convert", "Control",
+        
+        "Control", "Convert", "Control", "Control",
+        "Control", "Convert", "Control", "Control",
+        "Control", "Convert", "Control", "Control",
+        "Control", "Convert", "Control", "Control",
+        "Control", "Convert"))
+
+df6 <- cbind(as.data.frame(pre6_countData[,1]), sapply(pre6_countData[,-1], as.numeric))
+colnames(df6)[1] <- "metabolite"
+pre6_countData <- as.data.frame(df6)
+pre6_countData   <- pre6_countData  |> na.omit()
+
+countData <- as.data.frame(pre6_countData)
+metaData <- as.data.frame(metaData6)
+dds <- DESeqDataSetFromMatrix(countData=countData, colData=metaData, design=~Site, tidy = TRUE)
+dds <- DESeq(dds)
+res <- results(dds, contrast=c("Site","Convert", "Control"))
+
+ keyvals.colour <- ifelse(
+    res$log2FoldChange < -0 & res$pvalue < 0.05, "#3C5488B2",
+      ifelse(res$log2FoldChange > 0 & res$pvalue < 0.05, "#DC0000B2",
+        'black'))
+  keyvals.colour[is.na(keyvals.colour)] <- 'black'
+  names(keyvals.colour)[keyvals.colour == "#DC0000B2"] <- 'high'
+  names(keyvals.colour)[keyvals.colour == 'black'] <- 'ns'
+  names(keyvals.colour)[keyvals.colour == "#3C5488B2"] <- 'low'
+
+
+Pre6_M <- EnhancedVolcano(res,
+                      title = NULL,
+                      subtitle = NULL,
+                      lab = rownames(res),
+                      x = 'log2FoldChange',
+                      y = 'pvalue',
+                      xlab = bquote(~Log[2]~ 'fold change (NPX)'),
+                      pCutoff = 0.05,
+                      FCcutoff = 0,
+                      labSize = 0,
+                      boxedLabels = FALSE,
+                      legendPosition = 'none',
+                      legendLabSize = 11,
+                      legendIconSize = 4.0,
+                      drawConnectors = FALSE,
+                      arrowheads = FALSE,
+                      colCustom = keyvals.colour,
+                      pointSize = c(ifelse(abs(res$pvalue) < 0.05, 2, 1.5)),
+                      colAlpha = c(ifelse(abs(res$pvalue) < 0.05, 0.5, 0.2)),
+                      shape = 15,
+                      # max.overlaps = Inf,
+                      # maxoverlapsConnectors = Inf,
+                      caption = NULL,
+                      widthConnectors = 0.0, xlim = c(-6, 6),ylim = c(0, -log10(10e-11)))
+Pre6_M <- Pre6_M + theme_pubr() + scale_y_continuous(limits=c(0,-log10(10e-11)), breaks=seq(0,10,2)) +
+  annotate("rect", xmin = -6, xmax = -0.1, ymin = -log10(0.04), ymax = -log10(10e-11), alpha = .05) +
+  annotate("rect", xmin = 0.1, xmax = 6, ymin = -log10(0.04), ymax = -log10(10e-11), alpha = .05)+
+ geom_point(size = c(ifelse(abs(res$pvalue) < 0.05, 2, 1.5)), alpha = .9, na.rm = T, shape = 22, colour = "black")
+
+Pre6_M
+```
+
+```{r}
+countData <- read_excel("/bigrock/FurmanLab/DataRepository/promise/metabolomics/promise_metabolon_trans.xlsx")
+countData <- countData[!startsWith(countData$metabolite, "X-"),]
+
+df <- data.frame(countData)
+cols <- sapply(df, is.numeric)
+df[cols] <- 1000*df[cols]
+head(df)
+df <- cbind(df[,1], sapply(df[,-1], as.integer))
+colnames(df)[1] <- "metabolite"
+df <- as.data.frame(df)
+head(df)
+
+pre9_countData <- df |>
+select("metabolite", 
+       "X1300.0.Y0", "X2070.0.Y0", "X1397.0.Y0", "X2261.0.Y0",
+       "X2099.0.Y0", "X2089.0.Y0", "X2127.0.Y0", "X2280.0.Y0",  # Batch 1
+       "X2321.0.Y0", "X2249.0.Y0", 
+              
+        "X1380.0.Y0", "X2307.0.Y0", "X1094.0.Y0", "X2294.0.Y0", # Batch 2
+        "X2260.0.Y0", "X2048.0.Y0", "X2303.0.Y0", "X1212.0.Y0")
+
+metaData9 <- data.frame (
+      id  = 
+      c("X1300.0.Y0", "X2070.0.Y0", "X1397.0.Y0", "X2261.0.Y0",
+        "X2099.0.Y0", "X2089.0.Y0", "X2127.0.Y0", "X2280.0.Y0", 
+        "X2321.0.Y0", "X2249.0.Y0", 
+              
+        "X1380.0.Y0", "X2307.0.Y0", "X1094.0.Y0", "X2294.0.Y0", 
+        "X2260.0.Y0", "X2048.0.Y0", "X2303.0.Y0", "X1212.0.Y0"),
+      
+      Site = 
+      c("Convert", "Control", "Convert", "Control",
+        "Convert", "Control", "Convert", "Control", 
+        "Convert", "Control",
+        
+        
+        "Control", "Convert", "Control", "Convert", 
+        "Control", "Convert", "Control", "Convert"))
+
+df9 <- cbind(as.data.frame(pre9_countData[,1]), sapply(pre9_countData[,-1], as.numeric))
+colnames(df9)[1] <- "metabolite"
+pre9_countData <- as.data.frame(df9)
+pre9_countData   <- pre9_countData  |> na.omit()
+
+countData <- as.data.frame(pre9_countData)
+metaData <- as.data.frame(metaData9)
+dds <- DESeqDataSetFromMatrix(countData=countData, colData=metaData, design=~Site, tidy = TRUE)
+dds <- DESeq(dds)
+res <- results(dds, contrast=c("Site","Convert", "Control"))
+
+ keyvals.colour <- ifelse(
+    res$log2FoldChange < -0 & res$pvalue < 0.05, "#3C5488B2",
+      ifelse(res$log2FoldChange > 0 & res$pvalue < 0.05, "#DC0000B2",
+        'black'))
+  keyvals.colour[is.na(keyvals.colour)] <- 'black'
+  names(keyvals.colour)[keyvals.colour == "#DC0000B2"] <- 'high'
+  names(keyvals.colour)[keyvals.colour == 'black'] <- 'ns'
+  names(keyvals.colour)[keyvals.colour == "#3C5488B2"] <- 'low'
+
+
+Pre9_M <- EnhancedVolcano(res,
+                      title = NULL,
+                      subtitle = NULL,
+                      lab = rownames(res),
+                      x = 'log2FoldChange',
+                      y = 'pvalue',
+                      xlab = bquote(~Log[2]~ 'fold change (AIU)'),
+                      pCutoff = 0.05,
+                      FCcutoff = 0,
+                      pointSize = c(ifelse(abs(res$pvalue) < 0.05, 2, 1.5)),
+                      labSize = 0,
+                      boxedLabels = FALSE,
+                      legendPosition = 'none',
+                      legendLabSize = 11,
+                      legendIconSize = 4.0,
+                      drawConnectors = FALSE,
+                      arrowheads = FALSE,
+                      colCustom = keyvals.colour,
+                      colAlpha = c(ifelse(abs(res$pvalue) < 0.05, 0.5, 0.2)),
+                      # max.overlaps = Inf,
+                      # maxoverlapsConnectors = Inf,
+                      caption = NULL,
+                      shape=15,
+                      widthConnectors = 0.0, 
+                      xlim = c(-6, 6), 
+                      ylim = c(0, -log10(10e-11)))
+Pre9_M <- Pre9_M + theme_pubr() + scale_y_continuous(limits=c(0,-log10(10e-11)), breaks=seq(0,10,2)) +
+  annotate("rect", xmin = -6, xmax = -0.1, ymin = -log10(0.04), ymax = -log10(10e-11), alpha = .05) +
+  annotate("rect", xmin = 0.1, xmax = 6, ymin = -log10(0.04), ymax = -log10(10e-11), alpha = .05)  +
+ geom_point(size = c(ifelse(abs(res$pvalue) < 0.05, 2, 1.5)), alpha = .9, na.rm = T, shape = 22, colour = "black")
+  theme(axis.title.y = element_text(vjust = -0.5),
+        axis.title.x = element_text(vjust = +0.5))
+Pre9_M
+```
+
+

@@ -1,0 +1,414 @@
+---
+title: "redone_combined_metabolon_data"
+author: "Jordan Baechle"
+date: '2024-05-11'
+output: html_document
+---
+
+```{r}
+countData <- read_excel("/bigrock/FurmanLab/DataRepository/promise/metabolomics/PROMISE_metabolon_combined_trans.xlsx")
+countData <- countData[!startsWith(countData$metabolite, "X-"),]
+countData  <- countData %>% distinct(metabolite, .keep_all = TRUE)
+df <- data.frame(countData)
+cols <- sapply(df, is.numeric)
+df[cols] <- 1000*df[cols]
+head(df)
+df <- cbind(df[,1], sapply(df[,-1], as.integer))
+colnames(df)[1] <- "metabolite"
+df <- as.data.frame(df)
+
+
+### comparison 1
+prepostOGTT_pre6 <- df |>
+select("metabolite", 
+       "X2249.0.Y3", "X2249.120.Y3", "X2321.0.Y3", "X2321.120.Y3",
+       "X2280.0.Y3", "X2280.120.Y3", "X2127.0.Y3", "X2127.120.Y3",
+       "X2089.0.Y3", "X2089.120.Y3", "X2099.0.Y3", "X2099.120.Y3",
+       "X2261.0.Y3", "X2261.120.Y3", "X1397.0.Y3", "X1397.120.Y3",
+       "X2070.0.Y3", "X2070.120.Y3", "X1300.0.Y3", "X1300.120.Y3",
+       "X2220.0.Y3", "X2220.120.Y3", "X1152.0.Y3", "X1152.120.Y3",
+       
+       "X1094.0.Y3", "X1094.120.Y3", "X1212.0.Y3", "X1212.120.Y3",
+       "X1380.0.Y3", "X1380.120.Y3", "X1439.0.Y3", "X1439.120.Y3",
+       "X1452.0.Y3", "X1452.120.Y3", "X1484.0.Y3", "X1484.120.Y3",
+       "X1509.0.Y3", "X1509.120.Y3", "X1557.0.Y3", "X1557.120.Y3",
+       "X2048.0.Y3", "X2048.120.Y3", "X2073.0.Y3", "X2073.120.Y3",
+       "X2144.0.Y3", "X2144.120.Y3", "X2166.0.Y3", "X2166.120.Y3",
+       "X2210.0.Y3", "X2210.120.Y3", "X2260.0.Y3", "X2260.120.Y3",
+       "X2294.0.Y3", "X2294.120.Y3", "X2303.0.Y3", "X2303.120.Y3",
+       "X2307.0.Y3", "X2307.120.Y3" )
+
+df <- cbind(df[,1], sapply(prepostOGTT_pre6[,-1], as.numeric))
+colnames(df)[1] <- "metabolite"
+prepostOGTT_pre6 <- as.data.frame(df)
+
+
+### Batch 1
+prepostOGTT_pre6$X2249.0.Y3   <- as.numeric(prepostOGTT_pre6$X2249.0.Y3)
+prepostOGTT_pre6$X2249.120.Y3 <- as.numeric(prepostOGTT_pre6$X2249.120.Y3)
+
+prepostOGTT_pre6$X2321.0.Y3  <- as.numeric(prepostOGTT_pre6$X2321.0.Y3)
+prepostOGTT_pre6$X2321.120.Y3 <- as.numeric(prepostOGTT_pre6$X2321.120.Y3)
+
+prepostOGTT_pre6$X2280.0.Y3   <- as.numeric(prepostOGTT_pre6$X2280.0.Y3)
+prepostOGTT_pre6$X2280.120.Y3 <- as.numeric(prepostOGTT_pre6$X2280.120.Y3)
+
+prepostOGTT_pre6$X2127.0.Y3   <- as.numeric(prepostOGTT_pre6$X2127.0.Y3)
+prepostOGTT_pre6$X2127.120.Y3 <- as.numeric(prepostOGTT_pre6$X2127.120.Y3)
+
+prepostOGTT_pre6$X2089.0.Y3   <- as.numeric(prepostOGTT_pre6$X2089.0.Y3)
+prepostOGTT_pre6$X2089.120.Y3 <- as.numeric(prepostOGTT_pre6$X2089.120.Y3)
+
+prepostOGTT_pre6$X2099.0.Y3   <- as.numeric(prepostOGTT_pre6$X2099.0.Y3)
+prepostOGTT_pre6$X2099.120.Y3 <- as.numeric(prepostOGTT_pre6$X2099.120.Y3)
+
+prepostOGTT_pre6$X2261.0.Y3   <- as.numeric(prepostOGTT_pre6$X2261.0.Y3)
+prepostOGTT_pre6$X2261.120.Y3 <- as.numeric(prepostOGTT_pre6$X2261.120.Y3)
+
+prepostOGTT_pre6$X1397.0.Y3   <- as.numeric(prepostOGTT_pre6$X1397.0.Y3)
+prepostOGTT_pre6$X1397.120.Y3 <- as.numeric(prepostOGTT_pre6$X1397.120.Y3)
+
+prepostOGTT_pre6$X2070.0.Y3   <- as.numeric(prepostOGTT_pre6$X2070.0.Y3)
+prepostOGTT_pre6$X2070.120.Y3 <- as.numeric(prepostOGTT_pre6$X2070.120.Y3)
+
+prepostOGTT_pre6$X1300.0.Y3   <- as.numeric(prepostOGTT_pre6$X1300.0.Y3)
+prepostOGTT_pre6$X1300.120.Y3 <- as.numeric(prepostOGTT_pre6$X1300.120.Y3)
+
+prepostOGTT_pre6$X2220.0.Y3   <- as.numeric(prepostOGTT_pre6$X2220.0.Y3)
+prepostOGTT_pre6$X2220.120.Y3 <- as.numeric(prepostOGTT_pre6$X2220.120.Y3)
+
+prepostOGTT_pre6$X1152.0.Y3   <- as.numeric(prepostOGTT_pre6$X1152.0.Y3)
+prepostOGTT_pre6$X1152.120.Y3 <- as.numeric(prepostOGTT_pre6$X1152.120.Y3)
+
+### Batch 2
+prepostOGTT_pre6$X1094.0.Y3   <- as.numeric(prepostOGTT_pre6$X1094.0.Y3)
+prepostOGTT_pre6$X1094.120.Y3 <- as.numeric(prepostOGTT_pre6$X1094.120.Y3)
+
+prepostOGTT_pre6$X1212.0.Y3   <- as.numeric(prepostOGTT_pre6$X1212.0.Y3)
+prepostOGTT_pre6$X1212.120.Y3 <- as.numeric(prepostOGTT_pre6$X1212.120.Y3)
+
+prepostOGTT_pre6$X1380.0.Y3   <- as.numeric(prepostOGTT_pre6$X1380.0.Y3)
+prepostOGTT_pre6$X1380.120.Y3 <- as.numeric(prepostOGTT_pre6$X1380.120.Y3)
+
+prepostOGTT_pre6$X1439.0.Y3   <- as.numeric(prepostOGTT_pre6$X1439.0.Y3)
+prepostOGTT_pre6$X1439.120.Y3 <- as.numeric(prepostOGTT_pre6$X1439.120.Y3)
+
+prepostOGTT_pre6$X1452.0.Y3   <- as.numeric(prepostOGTT_pre6$X1452.0.Y3)
+prepostOGTT_pre6$X1452.120.Y3 <- as.numeric(prepostOGTT_pre6$X1452.120.Y3)
+
+prepostOGTT_pre6$X1484.0.Y3   <- as.numeric(prepostOGTT_pre6$X1484.0.Y3)
+prepostOGTT_pre6$X1484.120.Y3 <- as.numeric(prepostOGTT_pre6$X1484.120.Y3)
+
+prepostOGTT_pre6$X1509.0.Y3   <- as.numeric(prepostOGTT_pre6$X1509.0.Y3)
+prepostOGTT_pre6$X1509.120.Y3 <- as.numeric(prepostOGTT_pre6$X1509.120.Y3)
+
+prepostOGTT_pre6$X1557.0.Y3   <- as.numeric(prepostOGTT_pre6$X1557.0.Y3)
+prepostOGTT_pre6$X1557.120.Y3 <- as.numeric(prepostOGTT_pre6$X1557.120.Y3)
+
+prepostOGTT_pre6$X2048.0.Y3   <- as.numeric(prepostOGTT_pre6$X2048.0.Y3)
+prepostOGTT_pre6$X2048.120.Y3 <- as.numeric(prepostOGTT_pre6$X2048.120.Y3)
+
+prepostOGTT_pre6$X2073.0.Y3   <- as.numeric(prepostOGTT_pre6$X2073.0.Y3)
+prepostOGTT_pre6$X2073.120.Y3 <- as.numeric(prepostOGTT_pre6$X2073.120.Y3)
+
+prepostOGTT_pre6$X2144.0.Y3   <- as.numeric(prepostOGTT_pre6$X2144.0.Y3)
+prepostOGTT_pre6$X2144.120.Y3 <- as.numeric(prepostOGTT_pre6$X2144.120.Y3)
+
+prepostOGTT_pre6$X2166.0.Y3   <- as.numeric(prepostOGTT_pre6$X2166.0.Y3)
+prepostOGTT_pre6$X2166.120.Y3 <- as.numeric(prepostOGTT_pre6$X2166.120.Y3)
+
+prepostOGTT_pre6$X2210.0.Y3   <- as.numeric(prepostOGTT_pre6$X2210.0.Y3)
+prepostOGTT_pre6$X2210.120.Y3 <- as.numeric(prepostOGTT_pre6$X2210.120.Y3)
+
+prepostOGTT_pre6$X2260.0.Y3   <- as.numeric(prepostOGTT_pre6$X2260.0.Y3)
+prepostOGTT_pre6$X2260.120.Y3 <- as.numeric(prepostOGTT_pre6$X2260.120.Y3)
+
+prepostOGTT_pre6$X2294.0.Y3   <- as.numeric(prepostOGTT_pre6$X2294.0.Y3)
+prepostOGTT_pre6$X2294.120.Y3 <- as.numeric(prepostOGTT_pre6$X2294.120.Y3)
+
+prepostOGTT_pre6$X2303.0.Y3   <- as.numeric(prepostOGTT_pre6$X2303.0.Y3)
+prepostOGTT_pre6$X2303.120.Y3 <- as.numeric(prepostOGTT_pre6$X2303.120.Y3)
+
+prepostOGTT_pre6$X2307.0.Y3   <- as.numeric(prepostOGTT_pre6$X2307.0.Y3)
+prepostOGTT_pre6$X2307.120.Y3 <- as.numeric(prepostOGTT_pre6$X2307.120.Y3)
+
+### Batch 1
+prepostOGTT_pre6$X2249.fc <- (prepostOGTT_pre6$X2249.120.Y3 / prepostOGTT_pre6$X2249.0.Y3)
+prepostOGTT_pre6$X2321.fc <- (prepostOGTT_pre6$X2321.120.Y3 / prepostOGTT_pre6$X2321.0.Y3)
+prepostOGTT_pre6$X2280.fc <- (prepostOGTT_pre6$X2280.120.Y3 / prepostOGTT_pre6$X2280.0.Y3)
+prepostOGTT_pre6$X2127.fc <- (prepostOGTT_pre6$X2127.120.Y3 / prepostOGTT_pre6$X2127.0.Y3)
+prepostOGTT_pre6$X2089.fc <- (prepostOGTT_pre6$X2089.120.Y3 / prepostOGTT_pre6$X2089.0.Y3)
+prepostOGTT_pre6$X2099.fc <- (prepostOGTT_pre6$X2099.120.Y3 / prepostOGTT_pre6$X2099.0.Y3)
+prepostOGTT_pre6$X2261.fc <- (prepostOGTT_pre6$X2261.120.Y3 / prepostOGTT_pre6$X2261.0.Y3)
+prepostOGTT_pre6$X1397.fc <- (prepostOGTT_pre6$X1397.120.Y3 / prepostOGTT_pre6$X1397.0.Y3)
+prepostOGTT_pre6$X2070.fc <- (prepostOGTT_pre6$X2070.120.Y3 / prepostOGTT_pre6$X2070.0.Y3)
+prepostOGTT_pre6$X1300.fc <- (prepostOGTT_pre6$X1300.120.Y3 / prepostOGTT_pre6$X1300.0.Y3)
+prepostOGTT_pre6$X2220.fc <- (prepostOGTT_pre6$X2220.120.Y3 / prepostOGTT_pre6$X2220.0.Y3)
+prepostOGTT_pre6$X1152.fc <- (prepostOGTT_pre6$X1152.120.Y3 / prepostOGTT_pre6$X1152.0.Y3)
+
+### Batch 2
+
+prepostOGTT_pre6$X1094.fc <- (prepostOGTT_pre6$X1094.120.Y3 / prepostOGTT_pre6$X1094.0.Y3)
+prepostOGTT_pre6$X1212.fc <- (prepostOGTT_pre6$X1212.120.Y3 / prepostOGTT_pre6$X1212.0.Y3)
+prepostOGTT_pre6$X1380.fc <- (prepostOGTT_pre6$X1380.120.Y3 / prepostOGTT_pre6$X1380.0.Y3)
+prepostOGTT_pre6$X1439.fc <- (prepostOGTT_pre6$X1439.120.Y3 / prepostOGTT_pre6$X1439.0.Y3)
+prepostOGTT_pre6$X1452.fc <- (prepostOGTT_pre6$X1452.120.Y3 / prepostOGTT_pre6$X1452.0.Y3)
+prepostOGTT_pre6$X1484.fc <- (prepostOGTT_pre6$X1484.120.Y3 / prepostOGTT_pre6$X1484.0.Y3)
+prepostOGTT_pre6$X1509.fc <- (prepostOGTT_pre6$X1509.120.Y3 / prepostOGTT_pre6$X1509.0.Y3)
+prepostOGTT_pre6$X1509.fc <- (prepostOGTT_pre6$X1509.120.Y3 / prepostOGTT_pre6$X1509.0.Y3)
+prepostOGTT_pre6$X1557.fc <- (prepostOGTT_pre6$X1557.120.Y3 / prepostOGTT_pre6$X1557.0.Y3)
+prepostOGTT_pre6$X2048.fc <- (prepostOGTT_pre6$X2048.120.Y3 / prepostOGTT_pre6$X2048.0.Y3)
+prepostOGTT_pre6$X2073.fc <- (prepostOGTT_pre6$X2073.120.Y3 / prepostOGTT_pre6$X2073.0.Y3)
+prepostOGTT_pre6$X2144.fc <- (prepostOGTT_pre6$X2144.120.Y3 / prepostOGTT_pre6$X2144.0.Y3)
+prepostOGTT_pre6$X2166.fc <- (prepostOGTT_pre6$X2166.120.Y3 / prepostOGTT_pre6$X2166.0.Y3)
+prepostOGTT_pre6$X2210.fc <- (prepostOGTT_pre6$X2210.120.Y3 / prepostOGTT_pre6$X2210.0.Y3)
+prepostOGTT_pre6$X2260.fc <- (prepostOGTT_pre6$X2260.120.Y3 / prepostOGTT_pre6$X2260.0.Y3)
+prepostOGTT_pre6$X2294.fc <- (prepostOGTT_pre6$X2294.120.Y3 / prepostOGTT_pre6$X2294.0.Y3)
+prepostOGTT_pre6$X2303.fc <- (prepostOGTT_pre6$X2303.120.Y3 / prepostOGTT_pre6$X2303.0.Y3)
+prepostOGTT_pre6$X2307.fc <- (prepostOGTT_pre6$X2307.120.Y3 / prepostOGTT_pre6$X2307.0.Y3)
+
+
+
+prepost.fc_6 <- prepostOGTT_pre6 |>
+select("metabolite", 
+       "X2249.fc", "X2321.fc",
+       "X2280.fc", "X2127.fc",
+       "X2089.fc", "X2099.fc",
+       "X2261.fc", "X1397.fc",
+       "X2070.fc", "X1300.fc",
+       "X2220.fc", "X1152.fc",
+       
+       "X1094.fc", "X1212.fc",
+       "X1380.fc", "X1439.fc",
+       "X1452.fc", "X1484.fc",
+       "X1509.fc", "X1557.fc",
+       "X2048.fc", "X2073.fc",
+       "X2144.fc", "X2166.fc",
+       "X2210.fc", "X2260.fc",
+       "X2294.fc", "X2303.fc",
+       "X2307.fc")
+
+metaData6 <- data.frame (
+      id  = 
+      c("X2249.fc", "X2321.fc",
+       "X2280.fc", "X2127.fc",
+       "X2089.fc", "X2099.fc",
+       "X2261.fc", "X1397.fc",
+       "X2070.fc", "X1300.fc",
+       "X2220.fc", "X1152.fc",
+       
+       "X1094.fc", "X1212.fc",
+       "X1380.fc", "X1439.fc",
+       "X1452.fc", "X1484.fc",
+       "X1509.fc", "X1557.fc",
+       "X2048.fc", "X2073.fc",
+       "X2144.fc", "X2166.fc",
+       "X2210.fc", "X2260.fc",
+       "X2294.fc", "X2303.fc",
+       "X2307.fc"),
+      
+      Site = 
+      c("Control", "Convert", 
+        "Control", "Convert",
+        "Control", "Convert",
+        "Control", "Convert",
+        "Control", "Convert",
+        "Control", "Convert",
+        
+        "Control", "Convert",
+        "Control", "Convert",
+        "Convert", "Control",
+        "Control", "Control",
+        "Convert", "Convert",
+        "Control", "Convert",
+        "Control", "Control",
+                   "Convert",
+        "Control", "Convert"))
+
+countData  <- prepost.fc_6 %>% distinct(metabolite, .keep_all = TRUE)
+df <- data.frame(countData)
+cols <- sapply(df, is.numeric)
+df[cols] <- 1000*df[cols]
+head(df)
+df <- cbind(df[,1], sapply(df[,-1], as.integer))
+colnames(df)[1] <- "metabolite"
+countData <- as.data.frame(df)
+
+df <- cbind(as.data.frame(countData[,1]), 
+            sapply(countData[,-1], as.numeric))
+colnames(df)[1] <- "metabolite"
+countData <- as.data.frame(df)
+countData <- countData  |> na.omit()
+
+countData <- as.data.frame(countData)
+metaData <- as.data.frame(metaData6)
+dds <- DESeqDataSetFromMatrix(countData=countData, colData=metaData, design=~Site, tidy = TRUE)
+# Sex + ... Site 
+dds <- DESeq(dds)
+res <- results(dds)
+res <- results(dds, contrast=c("Site","Convert", "Control"))
+```
+
+
+```{r}
+ keyvals.colour <- ifelse(
+    res$log2FoldChange < -0 & res$pvalue < 0.05, "#3C5488B2",
+      ifelse(res$log2FoldChange > 0 & res$pvalue < 0.05, "#DC0000B2",
+        'black'))
+  keyvals.colour[is.na(keyvals.colour)] <- 'black'
+  names(keyvals.colour)[keyvals.colour == "#DC0000B2"] <- 'Increased in response to OGTT'
+  names(keyvals.colour)[keyvals.colour == 'black'] <- 'No significant change in response to OGTT'
+  names(keyvals.colour)[keyvals.colour == "#3C5488B2"] <- 'Decreased in response to OGTT'
+
+res$metabolite <- rownames(res)
+
+res1 <- as.data.frame(res)
+
+  # define different cell-types that will be shaded
+primary_bile_acids <- c(
+'cholate',
+'glycocholate',
+'chenodeoxycholate',
+'glycochenodeoxycholate',
+'taurochenodeoxycholate',
+'taurocholate',
+'tauro-beta-muricholate',
+'glycochenodeoxycholate 3-sulfate',
+'glycocholate glucuronide (1)',
+'glycochenodeoxycholate glucuronide (1)',
+'glyco-beta-muricholate**',
+'cholic acid glucuronide')
+
+secondary_bile_acids <- c(
+'deoxycholate',
+'ursodeoxycholate',
+'taurodeoxycholate',
+'glycodeoxycholate',
+'7-ketodeoxycholate',
+'glycolithocholate',
+'7-ketolithocholate',
+'hyocholate',
+'glycolithocholate sulfate*',
+'taurolithocholate 3-sulfate',
+'glycocholenate sulfate*',
+'taurocholenate sulfate*',
+'isoursodeoxycholate',
+'glycoursodeoxycholate',
+'tauroursodeoxycholate',
+'glycohyocholate',
+'3beta-hydroxy-5-cholenoate',
+'glycodeoxycholate 3-sulfate',
+'taurodeoxycholic acid 3-sulfate',
+'deoxycholic acid glucuronide',
+'glycoursodeoxycholic acid sulfate (1)',
+'glycoursodeoxycholic acid sulfate (2)',
+'lithocholate sulfate (1)',
+'lithocholic acid sulfate (2)',
+'taurochenodeoxycholic acid 3-sulfate',
+'isoursodeoxycholate sulfate (1)',
+'deoxycholic acid 12-sulfate*')
+
+
+  keyvals.shape <- ifelse(
+    rownames(res) %in% primary_bile_acids, 23,
+      ifelse(rownames(res) %in% secondary_bile_acids, 22,
+        21))
+  keyvals.shape[is.na(keyvals.shape)] <- 21
+  names(keyvals.shape)[keyvals.shape  == 21] <- 'Other metabolite'
+  names(keyvals.shape)[keyvals.shape  == 23] <- '1° Bile acid metabolite'
+  names(keyvals.shape)[keyvals.shape  == 22] <- '2° Bile acid metabolite'
+
+
+PrePost6_OGTT_combined <- EnhancedVolcano(res,
+                      title = NULL,
+                      subtitle = NULL,
+                      lab = rownames(res),
+                      x = 'log2FoldChange',
+                      y = 'pvalue',
+                      xlab = bquote(~Log[2]~ '∆fold change'),
+                      pCutoff = 0.05,
+                      FCcutoff = 0,
+                      labSize = 4,
+                      labCol = 'black',
+                      # labFace = 'bold',
+                      pointSize = 2.999,
+                     # shapeCustom = keyvals.shape,
+                     # shadeFill = keyvals.shape,
+                      boxedLabels = FALSE,
+                      legendPosition = 'right',
+                      legendLabSize = 11,
+                      legendIconSize = 4.0,
+                      drawConnectors = TRUE,
+                      arrowheads = FALSE,
+                      colCustom = keyvals.colour,
+                      colAlpha = c(ifelse(abs(res$pvalue) < 0.05, 0.5, 0.2)),
+                      caption = NULL,
+                      selectLab =  c(
+
+'glycocholate',
+
+'glycochenodeoxycholate',
+'taurochenodeoxycholate',
+'taurocholate',
+'tauro-beta-muricholate',
+'glycochenodeoxycholate 3-sulfate',
+
+'glycochenodeoxycholate glucuronide (1)',
+'glyco-beta-muricholate**',
+'cholic acid glucuronide',
+
+
+'taurodeoxycholate',
+'glycodeoxycholate',
+'7-ketodeoxycholate',
+
+'7-ketolithocholate',
+
+
+
+
+'taurocholenate sulfate*',
+
+'glycoursodeoxycholate',
+'tauroursodeoxycholate',
+'glycohyocholate',
+
+'glycodeoxycholate 3-sulfate',
+
+
+
+
+
+'lithocholic acid sulfate (2)',
+'taurochenodeoxycholic acid 3-sulfate',
+'isoursodeoxycholate sulfate (1)'
+
+                      ),
+                      max.overlaps = 50,
+                      maxoverlapsConnectors =50,
+                      widthConnectors = 0.5, xlim = c(-6, 3),ylim = c(0, -log10(10e-7)))
+PrePost6_OGTT_combined <- PrePost6_OGTT_combined + theme_pubr() +
+  annotate("rect", xmin = -6, xmax = -0.1, ymin = -log10(0.04), ymax = -log10(10e-7), alpha = .05) +
+  annotate("rect", xmin = 0.1, xmax = 3.0, ymin = -log10(0.04), ymax = -log10(10e-7), alpha = .05) +
+  geom_point(size = 3, alpha = .9, na.rm = T, shape = 21, colour = "black") +
+  scale_x_continuous(limits=c(-6,3),
+                     labels = label_number(accuracy = 1), 
+                     breaks=seq(-6,3, by = 3)) 
+
+PrePost6_OGTT_combined <-
+  PrePost6_OGTT_combined + 
+  labs(color = expression("Converter vs Controls T"[Dx] * "-6 years")) +
+  theme(axis.text.x = element_text( color = "black"), 
+        axis.text.y = element_text(color = "black"),
+        axis.title.y = element_text(color = "black"),
+        text = element_text(size = 16),
+        plot.title = element_text( color = "black", hjust = 0.5),
+        legend.position = "right",
+        legend.title= element_text( color = "black")) + labs(fill = " ")
+
+       
+ggsave("PrePost6_OGTT_Volcano_DEM_combined.png", plot=PrePost6_OGTT_combined, path=figures, height=7, width=12, units=c("in"), dpi=300)
+
+ggsave("PrePost6_OGTT_Volcano_DEM_combined.pdf", plot = PrePost6_OGTT_combined, path = figures, height=7.5, width=12.2, units = "in")
+
+```
