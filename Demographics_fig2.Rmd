@@ -1,0 +1,269 @@
+```{r}
+library(compareGroups)
+library(readxl)
+library(dplyr)
+# files <- "/opt/home/buckcenter.org/jbaechle/promise_project/files"
+ setwd("/Users/jordanbaechle/Desktop/Promise_updates")
+```
+
+
+
+Combine extra varables to new
+```{r}
+df2 <- read_excel("case_controls_meta_data_2nd batch.xlsx")
+df2$id <- as.character(df2$id)
+
+df22 <- read_excel("case_control_updates.xlsx")
+df22$id <- as.character(df2$id)
+
+# Merge datasets by "id" column
+merged_data <- merge(df2, df22, by = "id", suffixes = c(".x", ".y"))
+
+
+merged_data <- merged_data %>% rename(Sex = Sex.x)
+merged_data <- merged_data %>% rename(health_status = health_status.x)
+
+# Remove duplicate columns with identical values
+merged_data <- merged_data[, !duplicated(as.list(merged_data))]
+
+
+```
+
+
+
+Combine old w/ new
+```{r}
+
+df1 <- read_excel("case_match_list_FINAL.xlsx")
+df1$id <- as.character(df1$id)
+df2 <- merged_data 
+df2$id <- as.character(df2$id)
+
+common_cols <- intersect(colnames(df1), colnames(df2))
+
+# Select only the common columns from both datasets
+df1_common <- df1[, common_cols]
+df2_common <- df2[, common_cols]
+
+# Combine the datasets by appending df2 below df1
+combined_df <- rbind(df1_common, df2_common)
+```
+
+
+```{r}
+Demo <- combined_df
+Demo <- as.data.frame(Demo)
+rownames(Demo) <- Demo[,1]
+
+Demo <- Demo %>% 
+  mutate(
+    health_status = factor(health_status, 
+                         levels = (c("Healthy",
+                                 "Diabetes"))),
+         MedsBP = recode(MedsBloodPressure, 
+                          "1" = "Yes",
+                          "0" = "No"),
+         MedsLipidC = recode(MedsLipidsChol, 
+                          "1" = "Yes",
+                          "0" = "No"),
+         MedsGluc = recode(MedsGlucose, 
+                          "1" = "Yes",
+                          "0" = "No"),
+         MedsDM = recode(MedsDiabetes, 
+                          "1" = "Yes",
+                          "0" = "No"),
+         IGT  = recode(IGT, 
+                          "1" = "Yes",
+                          "0" = "No"), 
+         IFG  = recode(IFG, 
+                          "1" = "Yes",
+                          "0" = "No"),
+         TobaccoUse = factor(TobaccoUse, 
+                         levels = (c("Never",
+                                 "Former",
+                                 "Current"))), 
+         AlcoholPerWk = factor(AlcoholPerWk, 
+                         levels = (c("None",
+                                 "<1 drink",
+                                 "1-3 drinks",
+                                 "4-9 drinks",
+                                 "10-14 drinks",
+                                 ">15 drinks"))))
+  
+```
+
+T(dx) - 0
+
+```{r}
+# Select patient samples 0 years prior to DM diagnosis
+df0 <- Demo[c("X1006.0.Y3", "X1075.0.Y3", "X1131.0.Y3", "X1129.0.Y3",
+              "X1177.0.Y3", "X2186.0.Y3", "X1266.0.Y6", "X2285.0.Y6", 
+              "X2042.0.Y6", "X1249.0.Y6", "X2265.0.Y6", "X1150.0.Y6",
+              "X1509.0.Y6", "X2166.0.Y6", "X1557.0.Y6", "X2073.0.Y6",
+              "X2288.0.Y6", "X2210.0.Y6", "X2144.0.Y6", "X1452.0.Y6",
+              "X1484.0.Y6", "X1439.0.Y6"),]
+
+df0 <- df0 %>% mutate_at(c('Age', 'BMI', 'Height', 'Weight', 'Waist', 'Butt', 'Iliac', 'MET', 'Systolic', 
+                           'Diastolic', 
+                             'Chol', 'TAG',
+                            'HDL', 'LDL', 'ALT','HbA1c',  'CRP', 
+                           'HOMA', 'HOMA2_S', 'HOMA2_B', 'HOMA2IR', 'ISI', 'ISSI2', 
+                           'IGIIR', 'InsulinClearance', 'GlucoseAUC', 'InsulinAUC',
+                           'Glucose0', 'Glucose30', 'Glucose120', 
+                           'Insulin0', 'Insulin30', 'Insulin120'
+                            ), as.numeric)
+
+
+#MET,  SelfEdu, Occupation, Income, Birthweight, heart rate, creatinine, HbA1c, Vitamin D, PTH, UrineMicroalbumin,  UrineCreatinine, InsulinClearance, GlucoseAUC, InsulinAUC, CPeptideAUC, CPeptide0, CPeptide30, CPeptide120, MeanArtPressure
+
+# Ensure 'health_status' is a character column
+df0$health_status <- as.character(df0$health_status)
+
+# Replace blanks with "Diab" in health_status column
+df0$health_status[df0$health_status == ""] <- "Diab"
+
+Pre0 <- createTable(compareGroups(health_status ~ Sex + Age + Ethnicity +
+                                  BMI + Height + Weight + Waist + Butt + Iliac +
+                                  Birthweight + 
+                                  MET + 
+                                  TobaccoUse + AlcoholPerWk + 
+                                  MedsBP + MedsLipidC + 
+                                  Systolic + Diastolic  +
+                                  Chol + TAG + HDL + LDL + ALT + CRP + 
+                                  HbA1c + IGT + IFG + HOMA + HOMA2_S + HOMA2_B + HOMA2IR +
+                                  ISI + ISSI2 + IGIIR + InsulinClearance +
+                                  Glucose0 + Glucose30 + Glucose120 + GlucoseAUC +
+                                  Insulin0 + Insulin30 + Insulin120 + InsulinAUC,
+                                  df0, method = 2), show.n=TRUE)
+Pre0
+export2xls(Pre0, file='Pre0_demo_table2.xlsx')
+
+
+```
+
+T(dx) - 3
+
+```{r}
+# Select patient samples 3 years prior to DM diagnosis
+df3 <- Demo[c("X1131.0.Y0", "X1129.0.Y0",  "X1177.0.Y0", "X2186.0.Y0",
+              "X1266.0.Y3", "X2285.0.Y3", "X1300.0.Y6", "X2070.0.Y6", 
+              "X1397.0.Y6", "X2261.0.Y6", "X2042.0.Y3", "X1249.0.Y3", 
+              "X2099.0.Y6", "X2089.0.Y6", "X2127.0.Y6", "X2280.0.Y6",
+              "X2220.0.Y6", "X1152.0.Y6",
+              
+              "X1509.0.Y3", "X2166.0.Y3", "X1557.0.Y3", "X2073.0.Y3",
+              "X1380.0.Y6", "X2307.0.Y6", "X1094.0.Y6", "X2294.0.Y6",
+              "X2288.0.Y3", "X2210.0.Y3", "X2260.0.Y6", "X2048.0.Y6",
+              "X2144.0.Y3", "X1452.0.Y3", "X1484.0.Y3", "X1439.0.Y3",
+              "X2303.0.Y6", "X1212.0.Y6"),]
+
+df3 <- df3 %>% mutate_at(c('Age', 'BMI', 'Height', 'Weight', 'Waist', 'Butt', 'Iliac', 'MET', 'Systolic', 
+                           'Diastolic', 
+                           'Chol', 'TAG',
+                            'HDL', 'LDL', 'ALT','HbA1c',  'CRP', 
+                           'HOMA', 'HOMA2_S', 'HOMA2_B', 'HOMA2IR', 'ISI', 'ISSI2', 
+                           'IGIIR', 'InsulinClearance', 'GlucoseAUC', 'InsulinAUC',
+                           'Glucose0', 'Glucose30', 'Glucose120', 
+                           'Insulin0', 'Insulin30', 'Insulin120'), as.numeric)
+
+Pre3 <- createTable(compareGroups(health_status ~ Sex + Age + Ethnicity +
+                                  BMI + Height + Weight + Waist + Butt + Iliac +
+                                  Birthweight + 
+                                  MET + 
+                                  TobaccoUse + AlcoholPerWk + 
+                                  MedsBP + MedsLipidC + 
+                                  Systolic + Diastolic  +
+                                  Chol + TAG + HDL + LDL + ALT + CRP + 
+                                  HbA1c + IGT + IFG + HOMA + HOMA2_S + HOMA2_B + HOMA2IR +
+                                  ISI + ISSI2 + IGIIR + InsulinClearance +
+                                  Glucose0 + Glucose30 + Glucose120 + GlucoseAUC +
+                                  Insulin0 + Insulin30 + Insulin120 + InsulinAUC,
+                                  df3, method = 2), show.n=TRUE)
+Pre3
+export2xls(Pre3, file='Pre3_demo_table2.xlsx')
+
+```
+
+T(dx) - 6
+
+```{r}
+# Select patient samples 6 years prior to DM diagnosis
+df6 <- Demo[c("X1152.0.Y6", "X2220.0.Y3", "X1266.0.Y0", "X2285.0.Y0", 
+              "X1300.0.Y6", "X2070.0.Y3", "X1397.0.Y3", "X2261.0.Y3", 
+              "X2042.0.Y0", "X1249.0.Y0", "X2099.0.Y3", "X2089.0.Y3",
+              "X2127.0.Y3", "X2280.0.Y3", "X2265.0.Y0", "X1150.0.Y0", 
+              
+              "X2321.0.Y3", "X2249.0.Y3", 
+              "X1509.0.Y0", "X2166.0.Y0", "X1557.0.Y0", "X2073.0.Y0",
+              "X1380.0.Y3", "X2307.0.Y3", "X1094.0.Y3", "X2294.0.Y3",
+              "X2288.0.Y0", "X2210.0.Y0", "X2260.0.Y3", "X2048.0.Y3",
+              "X2144.0.Y0", "X1452.0.Y0", "X1484.0.Y0", "X1439.0.Y0",
+              "X2303.0.Y3", "X1212.0.Y3"),]
+
+df6 <- df6 %>% mutate_at(c('Age', 'BMI', 'Height', 'Weight', 'Waist', 'Butt', 'Iliac', 'MET', 'Systolic', 
+                           'Diastolic', 
+                           'Chol', 'TAG',
+                            'HDL', 'LDL', 'ALT','HbA1c',  'CRP', 
+                           'HOMA', 'HOMA2_S', 'HOMA2_B', 'HOMA2IR', 'ISI', 'ISSI2', 
+                           'IGIIR', 'InsulinClearance', 'GlucoseAUC', 'InsulinAUC',
+                           'Glucose0', 'Glucose30', 'Glucose120', 
+                           'Insulin0', 'Insulin30', 'Insulin120'), as.numeric)
+
+Pre6 <- createTable(compareGroups(health_status ~ Sex + Age + Ethnicity +
+                                  BMI + Height + Weight + Waist + Butt + Iliac +
+                                  Birthweight + 
+                                  MET + 
+                                  TobaccoUse + AlcoholPerWk + 
+                                  MedsBP + MedsLipidC + 
+                                  Systolic + Diastolic  +
+                                  Chol + TAG + HDL + LDL + ALT + CRP + 
+                                  HbA1c + IGT + IFG + HOMA + HOMA2_S + HOMA2_B + HOMA2IR +
+                                  ISI + ISSI2 + IGIIR + InsulinClearance +
+                                  Glucose0 + Glucose30 + Glucose120 + GlucoseAUC +
+                                  Insulin0 + Insulin30 + Insulin120 + InsulinAUC,
+                                  df6, method = 2), show.n=TRUE)
+Pre6
+export2xls(Pre6, file='Pre6_demo_table2.xlsx')
+```
+
+T(dx) - 9
+
+```{r}
+# Select patient samples 9 years prior to DM diagnosis
+df9 <- Demo[c("X1300.0.Y0", "X2070.0.Y0", "X1397.0.Y0", "X2261.0.Y0",
+              "X2099.0.Y0", "X2089.0.Y0", "X2127.0.Y0", "X2280.0.Y0", 
+              "X2321.0.Y0", "X2249.0.Y0", "X2220.0.Y0", "X1152.0.Y0",
+              
+              "X2321.0.Y0", "X2249.0.Y0", 
+              "X1380.0.Y0", "X2307.0.Y0", "X1094.0.Y0", "X2294.0.Y0",
+              "X2260.0.Y0", "X2048.0.Y0", "X2303.0.Y0", "X1212.0.Y0"),]
+
+df9 <- df9 %>% mutate_at(c('Age', 'BMI', 'Height', 'Weight', 'Waist', 'Butt', 'Iliac', 'MET', 'Systolic', 
+                           'Diastolic', 
+                           'Chol', 'TAG',
+                            'HDL', 'LDL', 'ALT','HbA1c',  'CRP', 
+                           'HOMA', 'HOMA2_S', 'HOMA2_B', 'HOMA2IR', 'ISI', 'ISSI2', 
+                           'IGIIR', 'InsulinClearance', 'GlucoseAUC', 'InsulinAUC',
+                           'Glucose0', 'Glucose30', 'Glucose120', 
+                           'Insulin0', 'Insulin30', 'Insulin120'), as.numeric)
+
+Pre9 <- createTable(compareGroups(health_status ~ Sex + Age + Ethnicity +
+                                  BMI + Height + Weight + Waist + Butt + Iliac +
+                                  Birthweight + 
+                                  MET + 
+                                  TobaccoUse + AlcoholPerWk + 
+                                  MedsBP + MedsLipidC + 
+                                  Systolic + Diastolic  +
+                                  Chol + TAG + HDL + LDL + ALT + CRP + 
+                                  HbA1c + IGT + IFG + HOMA + HOMA2_S + HOMA2_B + HOMA2IR +
+                                  ISI + ISSI2 + IGIIR + InsulinClearance +
+                                  Glucose0 + Glucose30 + Glucose120 + GlucoseAUC +
+                                  Insulin0 + Insulin30 + Insulin120 + InsulinAUC,
+                                  df9, method = 2), show.n=TRUE)
+Pre9
+export2xls(Pre9, file='Pre9_demo_table2.xlsx')
+
+
+
+
+```
